@@ -1,6 +1,7 @@
 import sys
 import os
 import pygame as pg
+import random
 from . import constants as c
 from . import colors
 from pygame.locals import *
@@ -14,16 +15,16 @@ def player1Controls(p1paddleY, gameStatus, key):
   # for debugging
   if gameStatus == 'DEBUG':
     if key[pg.K_w]:
-      if c.BALLY > c.BOUNDARYSIZE: c.BALLY = max(c.BALLY - c.BALLSPEED, c.BOUNDARYSIZE)
+      if c.BALLY > c.BOUNDARYSIZE: c.BALLY = max(c.BALLY - c.BALLSPEEDDEBUG, c.BOUNDARYSIZE)
       else: c.BALLY = c.BOUNDARYSIZE
     elif key[pg.K_s]:
-      if c.BALLY < c.WINDOWHEIGHT - c.BALLHEIGHT - c.BOUNDARYSIZE: c.BALLY = min(c.BALLY + c.BALLSPEED, c.WINDOWHEIGHT - c.BALLHEIGHT - c.BOUNDARYSIZE)
+      if c.BALLY < c.WINDOWHEIGHT - c.BALLHEIGHT - c.BOUNDARYSIZE: c.BALLY = min(c.BALLY + c.BALLSPEEDDEBUG, c.WINDOWHEIGHT - c.BALLHEIGHT - c.BOUNDARYSIZE)
       else: c.BALLY = c.WINDOWHEIGHT - c.BALLHEIGHT - c.BOUNDARYSIZE
     elif key[pg.K_a]:
-      if c.BALLX > c.BOUNDARYSIZE: c.BALLX = max(c.BALLX - c.BALLSPEED, c.BOUNDARYSIZE)
+      if c.BALLX > c.BOUNDARYSIZE: c.BALLX = max(c.BALLX - c.BALLSPEEDDEBUG, c.BOUNDARYSIZE)
       else: c.BALLX = c.BOUNDARYSIZE
     elif key[pg.K_d]:
-      if c.BALLX < c.WINDOWWIDTH - c.BALLWIDTH - c.BOUNDARYSIZE: c.BALLX = min(c.BALLX + c.BALLSPEED, c.WINDOWWIDTH - c.BALLWIDTH - c.BOUNDARYSIZE)
+      if c.BALLX < c.WINDOWWIDTH - c.BALLWIDTH - c.BOUNDARYSIZE: c.BALLX = min(c.BALLX + c.BALLSPEEDDEBUG, c.WINDOWWIDTH - c.BALLWIDTH - c.BOUNDARYSIZE)
       else: c.BALLX = c.WINDOWWIDTH - c.BALLWIDTH - c.BOUNDARYSIZE
 
   # player controls
@@ -45,6 +46,22 @@ def computerAI(ballY, p2paddleY):
     else: return c.BOUNDARYSIZE
   else: return ballY
 
+def updateBall():
+  c.BALLX = c.BALLX + c.BALLSPEEDX
+  c.BALLY = c.BALLY + c.BALLSPEEDY
+  if c.BALLX < c.BOUNDARYSIZE:
+    c.BALLX = c.BOUNDARYSIZE
+    c.BALLSPEEDX = (c.BALLSPEEDX + (c.BALLSPEEDX/abs(c.BALLSPEEDX)*random.randint(-2,2)))  * -1
+  elif c.BALLX > c.WINDOWWIDTH - c.BOUNDARYSIZE:
+    c.BALLX = c.WINDOWWIDTH - c.BOUNDARYSIZE
+    c.BALLSPEEDX = (c.BALLSPEEDX + (c.BALLSPEEDX/abs(c.BALLSPEEDX)*random.randint(-2,2)))  * -1
+  if c.BALLY < c.BOUNDARYSIZE:
+    c.BALLY = c.BOUNDARYSIZE
+    c.BALLSPEEDY = (c.BALLSPEEDY + (c.BALLSPEEDY/abs(c.BALLSPEEDY)*random.randint(-2,2)))  * -1
+  elif c.BALLY > c.WINDOWHEIGHT - c.BOUNDARYSIZE:
+    c.BALLY = c.WINDOWHEIGHT - c.BOUNDARYSIZE
+    c.BALLSPEEDY = (c.BALLSPEEDY + (c.BALLSPEEDY/abs(c.BALLSPEEDY)*random.randint(-2,2)))  * -1
+
 def main(gameStatus):
   while True: # main game loop
     DISPLAYSURF.fill(colors.black)
@@ -60,7 +77,8 @@ def main(gameStatus):
     pressed = pg.key.get_pressed()
     c.PLAYER1PADDLEY = player1Controls(c.PLAYER1PADDLEY, gameStatus, pressed) 
     c.PLAYER2PADDLEY = computerAI(c.BALLY, c.PLAYER2PADDLEY)
-  
+    updateBall()
+
     for event in pg.event.get():
       if event.type == QUIT:
         pg.quit()
