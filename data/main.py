@@ -24,8 +24,11 @@ class Ball:
     for paddle in PADDLESLIST:
       if self.ball.colliderect(paddle.paddle):
         # allow complicated 'spin' hits
-        if paddle.humanid == 'HUMAN':
-          print paddle.dy
+        if paddle.humanid == 'HUMAN1' or paddle.humanid == 'HUMAN2':
+          if paddle.humanid == 'HUMAN1':
+            GameBall.ball.left = paddle.paddle.right + 1
+          elif paddle.humanid == 'HUMAN2' or paddle.humanid == 'AI':
+            GameBall.ball.right = paddle.paddle.left - 1  
           if (paddle.dy > 0 and self.dy >= 0) or (paddle.dy < 0 and self.dy <= 0):  # paddle moving with ball in same direction
             print 'Nice!'
             self.dy += 2 * self.dy / abs(self.dy)  # increase speed
@@ -35,8 +38,17 @@ class Ball:
           elif paddle.dy == 0:  # paddle is stationary
             pass # ball continues moving in same direction with no change to speed
         self.dx = self.dx * -1
+        c.VOLLEYCOUNT += 1
+        if c.VOLLEYCOUNT == 8:
+          c.VOLLEYCOUNT = 0
+          self.dx = self.dx * 1.2 # when volleycount reaches 8 (or four hits each player, increase speed by 20%)
+          self.dy = self.dy * 1.2 # when volleycount reaches 8 (or four hits each player, increase speed by 20%)
     # game board collision
-    if (self.ball.top <= GAMEZONE.top) or (self.ball.bottom >= GAMEZONE.bottom):
+    if (self.ball.top <= GAMEZONE.top):
+      self.ball.top = GAMEZONE.top + 1
+      self.dy = self.dy * -1
+    elif (self.ball.bottom >= GAMEZONE.bottom):
+      self.ball.bottom = GAMEZONE.bottom - 1
       self.dy = self.dy * -1
     elif self.ball.left <= GAMEZONE.left:
       self.dx = 0
@@ -45,14 +57,12 @@ class Ball:
       GamePoint = False
       # Add points for Computer
     elif self.ball.right >= GAMEZONE.right:
-      """
       self.dx = 0
       self.dy = 0
       self.color = colors.green
-      main.GamePoint = False
+      GamePoint = False
       # Add points for Player
-      """
-      self.dx = self.dx * -1  # One Player Game
+      #self.dx = self.dx * -1  # One Player Game
 
 class Paddle:
   def __init__(self, startposx, startposy, humanid):
@@ -72,10 +82,21 @@ class Paddle:
     if self.paddle.top < GAMEZONE.top: self.paddle.top = GAMEZONE.top
     if self.paddle.bottom > GAMEZONE.bottom: self.paddle.bottom = GAMEZONE.bottom
 
+  def moveAI(self):
+    global GameBall
+    if GameBall.ball.centery < self.paddle.centery - 2: self.dy = -1  # game ball is above the AI player
+    elif GameBall.ball.centery > self.paddle.centery + 2: self.dy = 1 # game ball is below the AI player
+    else: self.dy = 0
+    self.paddle.top += self.speed * self.dy
+
+    # check for collision
+    if self.paddle.top < GAMEZONE.top: self.paddle.top = GAMEZONE.top
+    if self.paddle.bottom > GAMEZONE.bottom: self.paddle.bottom = GAMEZONE.bottom
+
 def PauseGame(type):
   global GameBall
   PauseGame = True
-  print 'Game Paused'
+  if type != 'PointMade': print 'Game Paused'
   store_dx = GameBall.dx
   store_dy = GameBall.dy
   GameBall.dx = 0
@@ -85,7 +106,7 @@ def PauseGame(type):
       if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
         if type == 'PointMade':
           GameBall  = Ball(GAMEZONE.centerx - c.BALLWIDTH, random.randint(GAMEZONE.top,GAMEZONE.bottom-c.BALLHEIGHT),colors.white)
-        print 'Game Unpaused'
+        if type != 'PointMade': print 'Game Unpaused'
         PauseGame = False
       elif event.type == QUIT or (event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE):
         pg.quit()
@@ -106,17 +127,24 @@ def CheckForOtherInput():
 pg.init()
 DISPLAYSURF = pg.display.set_mode((c.WINDOWWIDTH,c.WINDOWHEIGHT))
 FPSCLOCK = pg.time.Clock()
-pg.display.set_caption('Pong')
+pg.display.set_caption('Pong!')
 
 # initialize assets
 GAMEZONE = pg.Rect(c.BOUNDARYSIZE, c.BOUNDARYSIZE, c.WINDOWWIDTH - (c.BOUNDARYSIZE * 2), c.WINDOWHEIGHT - (c.BOUNDARYSIZE * 2))
+CENTERLINE = pg.Rect(GAMEZONE.centerx - 1, GAMEZONE.top, 5, GAMEZONE.height)
 PADDLESLIST = []
-PlayerOne = Paddle(c.BOUNDARYSIZE + 10, c.BOUNDARYSIZE, 'HUMAN')
+PlayerOne = Paddle(GAMEZONE.left + 10, GAMEZONE.top, 'HUMAN1')
+PlayerTwo = Paddle(GAMEZONE.right - c.PADDLETHICKNESS - 10, GAMEZONE.top, 'AI')
 GameBall  = Ball(GAMEZONE.centerx - c.BALLWIDTH, random.randint(GAMEZONE.top,GAMEZONE.bottom-c.BALLHEIGHT),colors.white)
 
 def main(gameStatus):
+  if PlayerTwo.humanid == 'AI' and gameStatus == 'EASY':
+    PlayerTwo.speed = PlayerTwo.speed * .65
   GameInProgress = True
   while GameInProgress:
+    if gameStatus == 'EASY':
+      GameBall.dx = GameBall.dx * .70
+      GameBall.dy = GameBall.dy * .70
 
     global GamePoint
     GamePoint = True
@@ -124,9 +152,11 @@ def main(gameStatus):
     while GamePoint: # main game loop
       DISPLAYSURF.fill(colors.black)  # create surface
       pg.draw.rect(DISPLAYSURF, colors.black, GAMEZONE)  # set game zone
-    
+      pg.draw.rect(DISPLAYSURF, colors.white, CENTERLINE)
+
       # draw assets
       pg.draw.rect(DISPLAYSURF, colors.white, PlayerOne.paddle)
+      pg.draw.rect(DISPLAYSURF, colors.white, PlayerTwo.paddle)
       pg.draw.rect(DISPLAYSURF, GameBall.color, GameBall.ball)
       
       # player controls
@@ -136,6 +166,8 @@ def main(gameStatus):
 
       # game commands
       PlayerOne.move(0)
+      if PlayerTwo.humanid == 'AI': PlayerTwo.moveAI()
+      else: PlayerTwo.move(0)
       GameBall.move()
       CheckForOtherInput()
       pg.display.update()
@@ -143,7 +175,9 @@ def main(gameStatus):
     
     # game point made, show final position, then wait for space bar to continue game.
     pg.draw.rect(DISPLAYSURF, colors.black, GAMEZONE)
+    pg.draw.rect(DISPLAYSURF, colors.white, CENTERLINE)
     pg.draw.rect(DISPLAYSURF, colors.white, PlayerOne.paddle)
+    pg.draw.rect(DISPLAYSURF, colors.white, PlayerTwo.paddle)
     pg.draw.rect(DISPLAYSURF, GameBall.color, GameBall.ball)
     pg.display.update()
     FPSCLOCK.tick(c.FPS)
