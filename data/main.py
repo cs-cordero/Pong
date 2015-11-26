@@ -6,82 +6,150 @@ from . import constants as c
 from . import colors
 from pygame.locals import *
 
-pg.init()
-DISPLAYSURF = pg.display.set_mode((c.WINDOWWIDTH,c.WINDOWHEIGHT))
-pg.display.set_caption('Pong')
-fpsClock = pg.time.Clock()
 
-def player1Controls(p1paddleY, gameStatus, key):
-  # for debugging
-  if gameStatus == 'DEBUG':
-    if key[pg.K_w]:
-      if c.BALLY > c.BOUNDARYSIZE: c.BALLY = max(c.BALLY - c.BALLSPEEDDEBUG, c.BOUNDARYSIZE)
-      else: c.BALLY = c.BOUNDARYSIZE
-    elif key[pg.K_s]:
-      if c.BALLY < c.WINDOWHEIGHT - c.BALLHEIGHT - c.BOUNDARYSIZE: c.BALLY = min(c.BALLY + c.BALLSPEEDDEBUG, c.WINDOWHEIGHT - c.BALLHEIGHT - c.BOUNDARYSIZE)
-      else: c.BALLY = c.WINDOWHEIGHT - c.BALLHEIGHT - c.BOUNDARYSIZE
-    elif key[pg.K_a]:
-      if c.BALLX > c.BOUNDARYSIZE: c.BALLX = max(c.BALLX - c.BALLSPEEDDEBUG, c.BOUNDARYSIZE)
-      else: c.BALLX = c.BOUNDARYSIZE
-    elif key[pg.K_d]:
-      if c.BALLX < c.WINDOWWIDTH - c.BALLWIDTH - c.BOUNDARYSIZE: c.BALLX = min(c.BALLX + c.BALLSPEEDDEBUG, c.WINDOWWIDTH - c.BALLWIDTH - c.BOUNDARYSIZE)
-      else: c.BALLX = c.WINDOWWIDTH - c.BALLWIDTH - c.BOUNDARYSIZE
+class Ball:
+  def __init__(self,startposx,startposy,color):
+    self.width  = c.BALLWIDTH
+    self.height = c.BALLHEIGHT
+    self.dx = c.BALLSPEEDX * c.DIRECTION[random.randint(0,1)]
+    self.dy = c.BALLSPEEDY * c.DIRECTION[random.randint(0,1)]
+    self.color = color
+    self.ball = pg.Rect(startposx,startposy,self.width,self.height)
 
-  # player controls
-  if key[pg.K_UP] or key[pg.K_LEFT]:
-    if p1paddleY > c.BOUNDARYSIZE: return max(p1paddleY - c.PLAYER1PADDLESPEED, c.BOUNDARYSIZE)
-    else: return c.BOUNDARYSIZE
-  elif key[pg.K_DOWN] or key[pg.K_RIGHT]:
-    if p1paddleY < c.WINDOWHEIGHT - c.PADDLELENGTH - c.BOUNDARYSIZE: return min(p1paddleY + c.PLAYER1PADDLESPEED, c.WINDOWHEIGHT - c.PADDLELENGTH - c.BOUNDARYSIZE)
-    else: return c.WINDOWHEIGHT - c.PADDLELENGTH - c.BOUNDARYSIZE
-  else: return p1paddleY
-  
+  def move(self):
+    global GamePoint
+    self.ball.left += self.dx
+    self.ball.top += self.dy
+    # paddle collision
+    for paddle in PADDLESLIST:
+      if self.ball.colliderect(paddle.paddle):
+        # allow complicated 'spin' hits
+        if paddle.humanid == 'HUMAN':
+          print paddle.dy
+          if (paddle.dy > 0 and self.dy >= 0) or (paddle.dy < 0 and self.dy <= 0):  # paddle moving with ball in same direction
+            print 'Nice!'
+            self.dy += 2 * self.dy / abs(self.dy)  # increase speed
+          elif (paddle.dy > 0 and self.dy <= 0) or (paddle.dy < 0 and self.dy >= 0):  # paddle moving against ball in opposite direction
+            print 'Great job!'
+            self.dy = self.dy * -1 # hit ball in opposite direction
+          elif paddle.dy == 0:  # paddle is stationary
+            pass # ball continues moving in same direction with no change to speed
+        self.dx = self.dx * -1
+    # game board collision
+    if (self.ball.top <= GAMEZONE.top) or (self.ball.bottom >= GAMEZONE.bottom):
+      self.dy = self.dy * -1
+    elif self.ball.left <= GAMEZONE.left:
+      self.dx = 0
+      self.dy = 0
+      self.color = colors.red
+      GamePoint = False
+      # Add points for Computer
+    elif self.ball.right >= GAMEZONE.right:
+      """
+      self.dx = 0
+      self.dy = 0
+      self.color = colors.green
+      main.GamePoint = False
+      # Add points for Player
+      """
+      self.dx = self.dx * -1  # One Player Game
 
-def computerAI(ballY, p2paddleY):
-  if ballY + c.BALLHEIGHT/2 > p2paddleY + c.PADDLELENGTH/2:
-    if p2paddleY < c.WINDOWHEIGHT - c.PADDLELENGTH - c.BOUNDARYSIZE: return min(p2paddleY + c.PLAYER2PADDLESPEED, c.WINDOWHEIGHT - c.PADDLELENGTH - c.BOUNDARYSIZE)
-    else: return c.WINDOWHEIGHT - c.PADDLELENGTH - c.BOUNDARYSIZE
-  elif ballY + c.BALLHEIGHT/2 < p2paddleY + c.PADDLELENGTH/2:
-    if p2paddleY > c.BOUNDARYSIZE: return max(p2paddleY - c.PLAYER2PADDLESPEED, c.BOUNDARYSIZE)
-    else: return c.BOUNDARYSIZE
-  else: return ballY
+class Paddle:
+  def __init__(self, startposx, startposy, humanid):
+    self.width  = c.PADDLETHICKNESS
+    self.height = c.PADDLELENGTH
+    self.speed  = c.PADDLESPEED
+    self.paddle = pg.Rect(startposx,startposy,self.width,self.height)
+    self.humanid = humanid
+    self.dy = 0
+    PADDLESLIST.append(self)
 
-def updateBall():
-  c.BALLX = c.BALLX + c.BALLSPEEDX
-  c.BALLY = c.BALLY + c.BALLSPEEDY
-  if c.BALLX < c.BOUNDARYSIZE:
-    c.BALLX = c.BOUNDARYSIZE
-    c.BALLSPEEDX = (c.BALLSPEEDX + (c.BALLSPEEDX/abs(c.BALLSPEEDX)*random.randint(-2,2)))  * -1
-  elif c.BALLX > c.WINDOWWIDTH - c.BOUNDARYSIZE:
-    c.BALLX = c.WINDOWWIDTH - c.BOUNDARYSIZE
-    c.BALLSPEEDX = (c.BALLSPEEDX + (c.BALLSPEEDX/abs(c.BALLSPEEDX)*random.randint(-2,2)))  * -1
-  if c.BALLY < c.BOUNDARYSIZE:
-    c.BALLY = c.BOUNDARYSIZE
-    c.BALLSPEEDY = (c.BALLSPEEDY + (c.BALLSPEEDY/abs(c.BALLSPEEDY)*random.randint(-2,2)))  * -1
-  elif c.BALLY > c.WINDOWHEIGHT - c.BOUNDARYSIZE:
-    c.BALLY = c.WINDOWHEIGHT - c.BOUNDARYSIZE
-    c.BALLSPEEDY = (c.BALLSPEEDY + (c.BALLSPEEDY/abs(c.BALLSPEEDY)*random.randint(-2,2)))  * -1
+  def move(self,dy):
+    self.dy = dy
+    self.paddle.top += self.speed * self.dy
 
-def main(gameStatus):
-  while True: # main game loop
-    DISPLAYSURF.fill(colors.black)
-  
-    # set player paddle location
-    player1Rect = pg.Rect(c.PLAYER1PADDLEX,c.PLAYER1PADDLEY,c.PADDLETHICKNESS,c.PADDLELENGTH)
-    player2Rect = pg.Rect(c.PLAYER2PADDLEX,c.PLAYER2PADDLEY,c.PADDLETHICKNESS,c.PADDLELENGTH)
-    ball = pg.Rect(c.BALLX, c.BALLY, c.BALLWIDTH, c.BALLHEIGHT)
-    pg.draw.rect(DISPLAYSURF, colors.white, player1Rect)
-    pg.draw.rect(DISPLAYSURF, colors.white, player2Rect)
-    pg.draw.rect(DISPLAYSURF, colors.white, ball)
-  
-    pressed = pg.key.get_pressed()
-    c.PLAYER1PADDLEY = player1Controls(c.PLAYER1PADDLEY, gameStatus, pressed) 
-    c.PLAYER2PADDLEY = computerAI(c.BALLY, c.PLAYER2PADDLEY)
-    updateBall()
+    # check for collision
+    if self.paddle.top < GAMEZONE.top: self.paddle.top = GAMEZONE.top
+    if self.paddle.bottom > GAMEZONE.bottom: self.paddle.bottom = GAMEZONE.bottom
 
+def PauseGame(type):
+  global GameBall
+  PauseGame = True
+  print 'Game Paused'
+  store_dx = GameBall.dx
+  store_dy = GameBall.dy
+  GameBall.dx = 0
+  GameBall.dy = 0
+  while PauseGame:
     for event in pg.event.get():
-      if event.type == QUIT:
+      if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
+        if type == 'PointMade':
+          GameBall  = Ball(GAMEZONE.centerx - c.BALLWIDTH, random.randint(GAMEZONE.top,GAMEZONE.bottom-c.BALLHEIGHT),colors.white)
+        print 'Game Unpaused'
+        PauseGame = False
+      elif event.type == QUIT or (event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE):
         pg.quit()
         sys.exit()
+  if type != 'PointMade':
+    GameBall.dx = store_dx
+    GameBall.dy = store_dy
+
+def CheckForOtherInput():
+  for event in pg.event.get():
+    if event.type == QUIT or (event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE):
+      pg.quit()
+      sys.exit()
+    elif event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
+      PauseGame('PlayerPaused')
+
+# initialize game
+pg.init()
+DISPLAYSURF = pg.display.set_mode((c.WINDOWWIDTH,c.WINDOWHEIGHT))
+FPSCLOCK = pg.time.Clock()
+pg.display.set_caption('Pong')
+
+# initialize assets
+GAMEZONE = pg.Rect(c.BOUNDARYSIZE, c.BOUNDARYSIZE, c.WINDOWWIDTH - (c.BOUNDARYSIZE * 2), c.WINDOWHEIGHT - (c.BOUNDARYSIZE * 2))
+PADDLESLIST = []
+PlayerOne = Paddle(c.BOUNDARYSIZE + 10, c.BOUNDARYSIZE, 'HUMAN')
+GameBall  = Ball(GAMEZONE.centerx - c.BALLWIDTH, random.randint(GAMEZONE.top,GAMEZONE.bottom-c.BALLHEIGHT),colors.white)
+
+def main(gameStatus):
+  GameInProgress = True
+  while GameInProgress:
+
+    global GamePoint
+    GamePoint = True
+
+    while GamePoint: # main game loop
+      DISPLAYSURF.fill(colors.black)  # create surface
+      pg.draw.rect(DISPLAYSURF, colors.black, GAMEZONE)  # set game zone
+    
+      # draw assets
+      pg.draw.rect(DISPLAYSURF, colors.white, PlayerOne.paddle)
+      pg.draw.rect(DISPLAYSURF, GameBall.color, GameBall.ball)
+      
+      # player controls
+      key = pg.key.get_pressed()
+      if key[pg.K_LEFT] or key[pg.K_UP]:      PlayerOne.move(-1) # move with multiplier -1.0
+      elif key[pg.K_RIGHT] or key[pg.K_DOWN]: PlayerOne.move( 1)  # move with multiplier +1.0
+
+      # game commands
+      PlayerOne.move(0)
+      GameBall.move()
+      CheckForOtherInput()
+      pg.display.update()
+      FPSCLOCK.tick(c.FPS)
+    
+    # game point made, show final position, then wait for space bar to continue game.
+    pg.draw.rect(DISPLAYSURF, colors.black, GAMEZONE)
+    pg.draw.rect(DISPLAYSURF, colors.white, PlayerOne.paddle)
+    pg.draw.rect(DISPLAYSURF, GameBall.color, GameBall.ball)
     pg.display.update()
-    fpsClock.tick(c.FPS)
+    FPSCLOCK.tick(c.FPS)
+    PauseGame('PointMade') # wait for space bar
+
+  for event in pg.event.get():
+      if event.type == QUIT or (event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE):
+        pg.quit()
+        sys.exit()
