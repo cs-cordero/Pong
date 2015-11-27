@@ -101,13 +101,6 @@ DISPLAYSURF = pg.display.set_mode((c.WINDOWWIDTH,c.WINDOWHEIGHT))
 FPSCLOCK = pg.time.Clock()
 pg.display.set_caption('Pong!')
 
-# initialize assets
-GAMEZONE = pg.Rect(c.BOUNDARYSIZE, c.BOUNDARYSIZE, c.WINDOWWIDTH - (c.BOUNDARYSIZE * 2), c.WINDOWHEIGHT - (c.BOUNDARYSIZE * 2))
-CENTERLINE = pg.Rect(GAMEZONE.centerx - 1, GAMEZONE.top, 5, GAMEZONE.height)
-PADDLESLIST = []
-PlayerOne = Paddle(GAMEZONE.left + 10, GAMEZONE.top, 'HUMAN1')
-PlayerTwo = Paddle(GAMEZONE.right - c.PADDLETHICKNESS - 10, GAMEZONE.top, 'AI')
-GameBall  = Ball(GAMEZONE.centerx - c.BALLWIDTH, random.randint(GAMEZONE.top,GAMEZONE.bottom-c.BALLHEIGHT),colors.white)
 
 def startGame():
   DISPLAYSURF.fill(colors.black)
@@ -149,8 +142,11 @@ def CheckForOtherInput(restrictions='None'):
     if event.type == QUIT or (event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE):
       pg.quit()
       sys.exit()
-    elif event.type == pg.KEYDOWN and event.key == pg.K_SPACE and restrictions != 'NoSpace':
+    elif event.type == pg.KEYDOWN and event.key == pg.K_SPACE and restrictions == 'EndGame':
+      return False
+    elif event.type == pg.KEYDOWN and event.key == pg.K_SPACE and restrictions != 'EndGame':
       PauseGame('PlayerPaused')
+  return True
 
 def PauseGame(type):
   global GameBall
@@ -172,7 +168,7 @@ def PauseGame(type):
   while PauseGame:
     for event in pg.event.get():
       if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
-        if type == 'PointMade1' or type == 'PointMade2':
+        if type == 'PointMade1' or type == 'PointMade2' and GameInProgress == True:
           GameBall  = Ball(GAMEZONE.centerx - c.BALLWIDTH, random.randint(GAMEZONE.top,GAMEZONE.bottom-c.BALLHEIGHT),colors.white)
         PauseGame = False
       elif event.type == QUIT or (event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE):
@@ -182,55 +178,73 @@ def PauseGame(type):
     GameBall.dx = store_dx
     GameBall.dy = store_dy
 
-def main(gameStatus):
+
+def initializeGame(gameStatus):
+  global GAMEZONE, CENTERLINE, PADDLESLIST, PlayerOne, PlayerTwo, GameBall
+  # initialize assets
+  GAMEZONE = pg.Rect(c.BOUNDARYSIZE, c.BOUNDARYSIZE, c.WINDOWWIDTH - (c.BOUNDARYSIZE * 2), c.WINDOWHEIGHT - (c.BOUNDARYSIZE * 2))
+  CENTERLINE = pg.Rect(GAMEZONE.centerx - 1, GAMEZONE.top, 5, GAMEZONE.height)
+  PADDLESLIST = []
+  PlayerOne = Paddle(GAMEZONE.left + 10, GAMEZONE.top, 'HUMAN1')
+  PlayerTwo = Paddle(GAMEZONE.right - c.PADDLETHICKNESS - 10, GAMEZONE.top, 'AI')
+  GameBall  = Ball(GAMEZONE.centerx - c.BALLWIDTH, random.randint(GAMEZONE.top,GAMEZONE.bottom-c.BALLHEIGHT),colors.white)
+  c.PLAYERONESCORE = 0
+  c.PLAYERTWOSCORE = 0
   if PlayerTwo.humanid == 'AI' and gameStatus == 'EASY':
     PlayerTwo.speed = PlayerTwo.speed * .65
-  startGame()
-  GameInProgress = True
-  while GameInProgress:
-    if gameStatus == 'EASY':
-      GameBall.dx = GameBall.dx * .70
-      GameBall.dy = GameBall.dy * .70
-    global GamePoint
-    GamePoint = True
-
-    while GamePoint: # main game loop
+  if gameStatus == 'EASY':
+    GameBall.dx = GameBall.dx * .70
+    GameBall.dy = GameBall.dy * .70
+  
+def main(gameStatus):
+  while True:
+    global GameInProgress, GamePoint
+    initializeGame(gameStatus)
+    startGame()
+    GameInProgress = True
+    while GameInProgress:
+      GamePoint = True
+  
+      while GamePoint: # main game loop
+        drawAssets()
+  
+        # player controls
+        key = pg.key.get_pressed()
+        if key[pg.K_LEFT] or key[pg.K_UP]:      PlayerOne.move(-1) # move with multiplier -1.0
+        elif key[pg.K_RIGHT] or key[pg.K_DOWN]: PlayerOne.move( 1)  # move with multiplier +1.0
+  
+        # game commands
+        PlayerOne.move(0)
+        if PlayerTwo.humanid == 'AI': PlayerTwo.moveAI()
+        else: PlayerTwo.move(0)
+        GameBall.move()
+        CheckForOtherInput()
+        pg.display.update()
+        FPSCLOCK.tick(c.FPS)
+      
+        if c.PLAYERTWOSCORE == 7: GameInProgress = False
+        elif c.PLAYERONESCORE == 7: GameInProgress = False
+  
+      # game point made, show final position, then wait for space bar to continue game.
       drawAssets()
-
-      # player controls
-      key = pg.key.get_pressed()
-      if key[pg.K_LEFT] or key[pg.K_UP]:      PlayerOne.move(-1) # move with multiplier -1.0
-      elif key[pg.K_RIGHT] or key[pg.K_DOWN]: PlayerOne.move( 1)  # move with multiplier +1.0
-
-      # game commands
-      PlayerOne.move(0)
-      if PlayerTwo.humanid == 'AI': PlayerTwo.moveAI()
-      else: PlayerTwo.move(0)
-      GameBall.move()
-      CheckForOtherInput()
       pg.display.update()
       FPSCLOCK.tick(c.FPS)
-    
-      if c.PLAYERTWOSCORE == 7: GameInProgress = False
-      elif c.PLAYERONESCORE == 7: GameInProgress = False
-
-    # game point made, show final position, then wait for space bar to continue game.
-    drawAssets()
-    pg.display.update()
-    FPSCLOCK.tick(c.FPS)
-    if GameBall.color == colors.red:
-      PauseGame('PointMade2') # wait for space bar
-    if GameBall.color == colors.green:
-      PauseGame('PointMade1') # wait for space bar
-
-  # match point made, show final position and quit.
-  if c.PLAYERONESCORE == 7:
-    drawAssets()
-    GenerateText('Player One Wins!',  GAMEZONE.centerx, GAMEZONE.centery)
-    pg.display.update()
-  elif c.PLAYERTWOSCORE == 7:
-    drawAssets()
-    GenerateText('Player Two Wins!',  GAMEZONE.centerx, GAMEZONE.centery)
-    pg.display.update()
-  while True:
-    CheckForOtherInput('NoSpace')
+      if GameBall.color == colors.red:
+        PauseGame('PointMade2') # wait for space bar
+      if GameBall.color == colors.green:
+        PauseGame('PointMade1') # wait for space bar
+  
+    # match point made, show final position and quit.
+    if c.PLAYERONESCORE == 7:
+      drawAssets()
+      GenerateText('Player One Wins!',  GAMEZONE.centerx, GAMEZONE.centery)
+      GenerateText('(Press Spacebar to Restart Game or ESC to Quit)', GAMEZONE.centerx, GAMEZONE.centery + 60, 18)
+      pg.display.update()
+    elif c.PLAYERTWOSCORE == 7:
+      drawAssets()
+      GenerateText('Player Two Wins!',  GAMEZONE.centerx, GAMEZONE.centery)
+      GenerateText('(Press Spacebar to Restart Game or ESC to Quit)', GAMEZONE.centerx, GAMEZONE.centery + 60, 18)
+      pg.display.update()
+    EndGame = True
+    while EndGame == True:
+      EndGame = CheckForOtherInput('EndGame')
