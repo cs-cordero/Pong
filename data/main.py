@@ -157,13 +157,13 @@ def PauseGame(type):
   GameBall.dy = 0
   if type == 'PointMade1':
     GenerateText('Player One Scored!', GAMEZONE.centerx, GAMEZONE.centery)
-    GenerateText('(Press Spacebar to Continue)', GAMEZONE.centerx, GAMEZONE.centery + 60, 18)
+    GenerateText('Press [Space] to Continue', GAMEZONE.centerx, GAMEZONE.centery + 60, 18)
   elif type == 'PointMade2':
     GenerateText('Player Two Scored!', GAMEZONE.centerx, GAMEZONE.centery)
-    GenerateText('(Press Spacebar to Continue)', GAMEZONE.centerx, GAMEZONE.centery + 60, 18)
+    GenerateText('Press [Space] to Continue', GAMEZONE.centerx, GAMEZONE.centery + 60, 18)
   else:
     GenerateText('Game Paused', GAMEZONE.centerx, GAMEZONE.centery)
-    GenerateText('(Press Spacebar to Continue)', GAMEZONE.centerx, GAMEZONE.centery + 60, 18)
+    GenerateText('Press [Space] to Continue', GAMEZONE.centerx, GAMEZONE.centery + 60, 18)
   pg.display.update()
   while PauseGame:
     for event in pg.event.get():
@@ -238,13 +238,51 @@ def main(gameStatus):
     if c.PLAYERONESCORE == 7:
       drawAssets()
       GenerateText('Player One Wins!',  GAMEZONE.centerx, GAMEZONE.centery)
-      GenerateText('(Press Spacebar to Restart Game or ESC to Quit)', GAMEZONE.centerx, GAMEZONE.centery + 60, 18)
+      GenerateText('Press [Space] to RestartGame or ESC to Quit)', GAMEZONE.centerx, GAMEZONE.centery + 60, 18)
       pg.display.update()
     elif c.PLAYERTWOSCORE == 7:
       drawAssets()
       GenerateText('Player Two Wins!',  GAMEZONE.centerx, GAMEZONE.centery)
-      GenerateText('(Press Spacebar to Restart Game or ESC to Quit)', GAMEZONE.centerx, GAMEZONE.centery + 60, 18)
+      GenerateText('Press [Space] to RestartGame or ESC to Quit)', GAMEZONE.centerx, GAMEZONE.centery + 60, 18)
       pg.display.update()
     EndGame = True
     while EndGame == True:
       EndGame = CheckForOtherInput('EndGame')
+
+def MenuScreen():
+  DISPLAYSURF.fill(colors.black)
+  GenerateText('Pong', c.WINDOWWIDTH / 2, c.WINDOWHEIGHT / 2, 48)
+  GenerateText('Press [Space] to Continue', c.WINDOWWIDTH / 2, (c.WINDOWHEIGHT / 4)*3, 18)
+  pg.display.update()
+  NeedInput = True
+  while NeedInput:
+    for event in pg.event.get():
+      if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
+        NeedInput = False
+      elif event.type == QUIT or (event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE):
+        pg.quit()
+        sys.exit()
+  Selection = 5.5
+  NeedInput = True
+  while NeedInput:
+    DISPLAYSURF.fill(colors.black)
+    GenerateText('Pong', c.WINDOWWIDTH / 2, c.WINDOWHEIGHT / 2, 48)
+    GenerateText('Select Difficulty:', c.WINDOWWIDTH / 2, (c.WINDOWHEIGHT / 8)*5, 18)
+    GenerateText('Normal', c.WINDOWWIDTH / 2, (c.WINDOWHEIGHT / 8)*5.5, 18)
+    GenerateText('Easy', c.WINDOWWIDTH / 2, (c.WINDOWHEIGHT / 8)*6, 18)
+    SelectionArrow = (((c.WINDOWWIDTH/8)*3 - 6, (c.WINDOWHEIGHT / 8)*Selection - 6), ((c.WINDOWWIDTH/8)*3 - 6, (c.WINDOWHEIGHT / 8)*Selection + 6), ((c.WINDOWWIDTH/8)*3 + 6, (c.WINDOWHEIGHT / 8)*Selection))
+    pg.draw.polygon(DISPLAYSURF,colors.white, SelectionArrow)
+    pg.display.update()
+    for event in pg.event.get():
+      if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
+        NeedInput = False
+        if Selection == 5.5: difficulty = 'NORMAL'
+        elif Selection == 6: difficulty = 'EASY'
+      elif event.type == pg.KEYDOWN and event.key == pg.K_UP:
+        Selection = max(5.5, Selection - 0.5)
+      elif event.type == pg.KEYDOWN and event.key == pg.K_DOWN:
+        Selection = min(6.0, Selection + 0.5)
+      elif event.type == QUIT or (event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE):
+        pg.quit()
+        sys.exit()
+  main(difficulty)
