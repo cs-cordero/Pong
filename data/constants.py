@@ -10,8 +10,8 @@ WINDOWHEIGHT = 600
 BOUNDARYSIZE = 25
 
 # Paddle Constants
-PADDLELENGTH = 75
-PADDLETHICKNESS = 10
+PADDLELENGTH = 100
+PADDLETHICKNESS = 8
 PADDLESPEED = WINDOWHEIGHT / FPS  # should take 1 second to get from the top to the bottom.
 
 # Ball Constants

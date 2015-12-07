@@ -104,19 +104,15 @@ pg.display.set_caption('Pong!')
 
 def startGame():
   DISPLAYSURF.fill(colors.black)
-  GenerateText('First to 7 points wins!', GAMEZONE.centerx, GAMEZONE.centery)
+  GenerateText('The first player to 7 points wins!', GAMEZONE.centerx, GAMEZONE.centery, size=18, font='prstartk')
   pg.display.update()
   pg.time.wait(1000)
   DISPLAYSURF.fill(colors.black)
-  GenerateText('3', GAMEZONE.centerx, GAMEZONE.centery)
+  GenerateText('Ready?', GAMEZONE.centerx, GAMEZONE.centery)
   pg.display.update()
   pg.time.wait(1000)
   DISPLAYSURF.fill(colors.black)
-  GenerateText('2', GAMEZONE.centerx, GAMEZONE.centery)
-  pg.display.update()
-  pg.time.wait(1000)
-  DISPLAYSURF.fill(colors.black)
-  GenerateText('1', GAMEZONE.centerx, GAMEZONE.centery)
+  GenerateText('Go!', GAMEZONE.centerx, GAMEZONE.centery)
   pg.display.update()
   pg.time.wait(1000)
 
@@ -124,14 +120,14 @@ def drawAssets():
   DISPLAYSURF.fill(colors.black)
   pg.draw.rect(DISPLAYSURF, colors.black, GAMEZONE)
   pg.draw.rect(DISPLAYSURF, colors.white, CENTERLINE)
-  GenerateText(repr(c.PLAYERONESCORE), GAMEZONE.centerx - 30, GAMEZONE.top + 25, 45)
-  GenerateText(repr(c.PLAYERTWOSCORE), GAMEZONE.centerx + 30, GAMEZONE.top + 25, 45)
+  GenerateText(repr(c.PLAYERONESCORE), GAMEZONE.centerx - 40, GAMEZONE.top + 25, 36)
+  GenerateText(repr(c.PLAYERTWOSCORE), GAMEZONE.centerx + 45, GAMEZONE.top + 25, 36)
   pg.draw.rect(DISPLAYSURF, colors.white, PlayerOne.paddle)
   pg.draw.rect(DISPLAYSURF, colors.white, PlayerTwo.paddle)
   pg.draw.rect(DISPLAYSURF, GameBall.color, GameBall.ball)
 
-def GenerateText(text, posx, posy, size=32):
-  fontObj = pg.font.Font('freesansbold.ttf', size)
+def GenerateText(text, posx, posy, size=32, font='prstartk'):
+  fontObj = pg.font.Font(os.path.join(os.path.dirname(__file__),'..','fonts',font + '.TTF'), size)
   textSurfaceObj = fontObj.render(text, True, colors.white, colors.black)
   textRectObj = textSurfaceObj.get_rect()
   textRectObj.center = (posx, posy)
@@ -157,13 +153,13 @@ def PauseGame(type):
   GameBall.dy = 0
   if type == 'PointMade1':
     GenerateText('Player One Scored!', GAMEZONE.centerx, GAMEZONE.centery)
-    GenerateText('Press [Space] to Continue', GAMEZONE.centerx, GAMEZONE.centery + 60, 18)
+    GenerateText('Press [Space] to Continue', GAMEZONE.centerx, GAMEZONE.centery + 60, 14)
   elif type == 'PointMade2':
     GenerateText('Player Two Scored!', GAMEZONE.centerx, GAMEZONE.centery)
-    GenerateText('Press [Space] to Continue', GAMEZONE.centerx, GAMEZONE.centery + 60, 18)
+    GenerateText('Press [Space] to Continue', GAMEZONE.centerx, GAMEZONE.centery + 60, 14)
   else:
     GenerateText('Game Paused', GAMEZONE.centerx, GAMEZONE.centery)
-    GenerateText('Press [Space] to Continue', GAMEZONE.centerx, GAMEZONE.centery + 60, 18)
+    GenerateText('Press [Space] to Continue', GAMEZONE.centerx, GAMEZONE.centery + 60, 14)
   pg.display.update()
   while PauseGame:
     for event in pg.event.get():
@@ -183,7 +179,7 @@ def initializeGame(gameStatus):
   global GAMEZONE, CENTERLINE, PADDLESLIST, PlayerOne, PlayerTwo, GameBall
   # initialize assets
   GAMEZONE = pg.Rect(c.BOUNDARYSIZE, c.BOUNDARYSIZE, c.WINDOWWIDTH - (c.BOUNDARYSIZE * 2), c.WINDOWHEIGHT - (c.BOUNDARYSIZE * 2))
-  CENTERLINE = pg.Rect(GAMEZONE.centerx - 1, GAMEZONE.top, 5, GAMEZONE.height)
+  CENTERLINE = pg.Rect(GAMEZONE.centerx - 1, GAMEZONE.top, 6, GAMEZONE.height)
   PADDLESLIST = []
   PlayerOne = Paddle(GAMEZONE.left + 10, GAMEZONE.top, 'HUMAN1')
   PlayerTwo = Paddle(GAMEZONE.right - c.PADDLETHICKNESS - 10, GAMEZONE.top, 'AI')
@@ -238,12 +234,12 @@ def main(gameStatus):
     if c.PLAYERONESCORE == 7:
       drawAssets()
       GenerateText('Player One Wins!',  GAMEZONE.centerx, GAMEZONE.centery)
-      GenerateText('Press [Space] to RestartGame or ESC to Quit)', GAMEZONE.centerx, GAMEZONE.centery + 60, 18)
+      GenerateText('Press [Space] to RestartGame or ESC to Quit)', GAMEZONE.centerx, GAMEZONE.centery + 60, 14)
       pg.display.update()
     elif c.PLAYERTWOSCORE == 7:
       drawAssets()
       GenerateText('Player Two Wins!',  GAMEZONE.centerx, GAMEZONE.centery)
-      GenerateText('Press [Space] to RestartGame or ESC to Quit)', GAMEZONE.centerx, GAMEZONE.centery + 60, 18)
+      GenerateText('Press [Space] to RestartGame or ESC to Quit)', GAMEZONE.centerx, GAMEZONE.centery + 60, 14)
       pg.display.update()
     EndGame = True
     while EndGame == True:
@@ -251,8 +247,8 @@ def main(gameStatus):
 
 def MenuScreen():
   DISPLAYSURF.fill(colors.black)
-  GenerateText('Pong', c.WINDOWWIDTH / 2, c.WINDOWHEIGHT / 2, 48)
-  GenerateText('Press [Space] to Continue', c.WINDOWWIDTH / 2, (c.WINDOWHEIGHT / 4)*3, 18)
+  GenerateText('Pong', c.WINDOWWIDTH / 2, c.WINDOWHEIGHT / 2, size=80, font='Bauhaus')
+  GenerateText('Press [Space] to Continue', c.WINDOWWIDTH / 2, (c.WINDOWHEIGHT / 4)*3, 14)
   pg.display.update()
   NeedInput = True
   while NeedInput:
@@ -266,10 +262,10 @@ def MenuScreen():
   NeedInput = True
   while NeedInput:
     DISPLAYSURF.fill(colors.black)
-    GenerateText('Pong', c.WINDOWWIDTH / 2, c.WINDOWHEIGHT / 2, 48)
-    GenerateText('Select Difficulty:', c.WINDOWWIDTH / 2, (c.WINDOWHEIGHT / 8)*5, 18)
-    GenerateText('Normal', c.WINDOWWIDTH / 2, (c.WINDOWHEIGHT / 8)*5.5, 18)
-    GenerateText('Easy', c.WINDOWWIDTH / 2, (c.WINDOWHEIGHT / 8)*6, 18)
+    GenerateText('Pong', c.WINDOWWIDTH / 2, c.WINDOWHEIGHT / 2, size=80, font='Bauhaus')
+    GenerateText('Select Difficulty:', c.WINDOWWIDTH / 2, (c.WINDOWHEIGHT / 8)*5, 14)
+    GenerateText('Normal', c.WINDOWWIDTH / 2, (c.WINDOWHEIGHT / 8)*5.5, 14)
+    GenerateText('Easy', c.WINDOWWIDTH / 2, (c.WINDOWHEIGHT / 8)*6, 14)
     SelectionArrow = (((c.WINDOWWIDTH/8)*3 - 6, (c.WINDOWHEIGHT / 8)*Selection - 6), ((c.WINDOWWIDTH/8)*3 - 6, (c.WINDOWHEIGHT / 8)*Selection + 6), ((c.WINDOWWIDTH/8)*3 + 6, (c.WINDOWHEIGHT / 8)*Selection))
     pg.draw.polygon(DISPLAYSURF,colors.white, SelectionArrow)
     pg.display.update()

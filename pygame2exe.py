@@ -42,33 +42,33 @@ class pygame2exe(py2exe.build_exe.py2exe): #This hack make sure that pygame defa
 class BuildExe:
     def __init__(self):
         #Name of starting .py
-        self.script = "MyApps.py"
+        self.script = "pong.py"
  
         #Name of program
-        self.project_name = "MyApps"
+        self.project_name = "Pong"
  
         #Project url
-        self.project_url = "about:none"
+        self.project_url = "https://github.com/cs-cordero/pong"
  
         #Version of program
-        self.project_version = "0.0"
+        self.project_version = "1.0"
  
         #License of the program
-        self.license = "MyApps License"
+        self.license = "The MIT License"
  
         #Auhor of program
-        self.author_name = "Me"
-        self.author_email = "example@example.com"
-        self.copyright = "Copyright (c) 2009 Me."
+        self.author_name = "Christopher Cordero"
+        self.author_email = "chris.s.cordero@gmail.com"
+        self.copyright = "Copyright (c) 2015 Christopher Cordero"
  
         #Description
-        self.project_description = "MyApps Description"
+        self.project_description = "The classic arcade game Pong recreated in Python."
  
         #Icon file (None will use pygame default icon)
         self.icon_file = None
  
         #Extra files/dirs copied to game
-        self.extra_datas = []
+        self.extra_datas = ['data','fonts']
  
         #Extra/excludes python modules
         self.extra_modules = []
