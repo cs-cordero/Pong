@@ -127,7 +127,7 @@ def drawAssets():
   pg.draw.rect(DISPLAYSURF, GameBall.color, GameBall.ball)
 
 def GenerateText(text, posx, posy, size=32, font='prstartk'):
-  fontObj = pg.font.Font(os.path.join(os.path.dirname(__file__),'..','fonts',font + '.TTF'), size)
+  fontObj = pg.font.Font(os.path.join(os.path.dirname(__file__),'..','..','fonts',font + '.TTF'), size)
   textSurfaceObj = fontObj.render(text, True, colors.white, colors.black)
   textRectObj = textSurfaceObj.get_rect()
   textRectObj.center = (posx, posy)
